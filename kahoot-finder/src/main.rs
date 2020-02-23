@@ -7,7 +7,7 @@ const BACKOFF_TIME: Duration = Duration::from_secs(10);
 
 #[tokio::main]
 async fn main() {
-    let client = kahoot::Client::new();
+    let client = kahoot::challenge::Client::new();
     let mut code = rand::random::<u32>() % CODE_LIMIT;
 
     loop {
