@@ -1,0 +1,11 @@
+[package]
+name = "kahoot-finder"
+version = "0.0.1"
+authors = [ "adumbidiot <nathaniel.daniel23@outlook.com>" ]
+edition = "2018"
+
+[dependencies]
+http = "0.2.0"
+kahoot = { path = "../kahoot" }
+rand = "0.7.3"
+tokio = { version = "0.2.11", features = [ "macros", "rt-threaded", "time" ] }
