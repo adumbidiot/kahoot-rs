@@ -1,10 +1,15 @@
 use kahoot::Context;
 use rand::Rng;
+use std::io::stdin;
 
 struct BotHandler;
 
 #[kahoot::async_trait]
 impl kahoot::Handler for BotHandler {
+    async fn on_login(&self, ctx: Context) {
+        println!("Logged in as: {}", ctx.get_username());
+    }
+
     async fn on_get_ready(&self, _ctx: Context, msg: kahoot::message::GetReadyMessage) {
         dbg!(msg);
     }
@@ -21,13 +26,35 @@ impl kahoot::Handler for BotHandler {
     }
 }
 
+fn read_line() -> String {
+    let mut s = String::new();
+    stdin().read_line(&mut s).unwrap();
+    String::from(s.trim())
+}
+
 #[tokio::main(threaded_scheduler)]
 async fn main() {
-    let code = "7800484";
-    let mut client = kahoot::Client::connect_with_handler(code.into(), "bob1".into(), BotHandler)
-        .await
-        .unwrap();
+    println!("Enter a Code: ");
+    let code = read_line();
 
-    let res = client.run().await;
-    res.unwrap();
+    println!("Enter a Name: ");
+    let name = read_line();
+
+    let mut client =
+        match kahoot::Client::connect_with_handler(code.clone(), name, BotHandler).await {
+            Ok(c) => c,
+            Err(e) => {
+                eprintln!("Failed to connect to quiz '{}', got error: {:#?}", code, e);
+                return;
+            }
+        };
+
+    match client.run().await {
+        Ok(_) => {
+            println!("Client exited sucessfully");
+        }
+        Err(e) => {
+            eprintln!("Client exited with error: {:#?}", e);
+        }
+    }
 }
