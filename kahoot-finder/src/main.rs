@@ -35,6 +35,7 @@ async fn main() {
             Ok(c) => {
                 println!("Located potential kahoot: {}", code_str);
                 println!("Decoded Challenge: {}", c);
+                println!("Testing Session validity...");
 
                 let client_connect = kahoot::Client::connect_with_handler(
                     code_str.clone(),
@@ -54,7 +55,7 @@ async fn main() {
                         }
                     },
                     Err(e) => {
-                        eprintln!("Unable to connect, got error: {:#?}", e);
+                        eprintln!("Unable to connect to Bauyex server using websockets, got error: {:#?}", e);
                     }
                 }
             }
