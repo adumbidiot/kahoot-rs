@@ -1,0 +1,10 @@
+[package]
+name = "cometd-client"
+version = "0.0.1"
+authors = ["adumbidiot <nathaniel.daniel23@outlook.com>"]
+edition = "2018"
+
+[dependencies]
+websocket = "0.23.0"
+serde = { version = "1.0.101", features = [ "derive" ] }
+serde_json = "1.0.41"
