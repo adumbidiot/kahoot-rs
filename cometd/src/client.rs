@@ -14,7 +14,7 @@ pub struct Client<T> {
     ctx: Context,
     transport: WsTransport,
 
-    handler: T,
+    pub handler: T,
 }
 
 impl Client<DefaultHandler> {

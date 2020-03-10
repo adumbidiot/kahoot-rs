@@ -67,6 +67,10 @@ impl Context {
         self.send_packet(packet).await
     }
 
+    pub async fn shutdown(&self) -> CometResult<()> {
+        self.transport.graceful_shutdown().await
+    }
+
     pub fn get_client_id(&self) -> Option<String> {
         self.inner.lock().client_id.as_ref().cloned()
     }

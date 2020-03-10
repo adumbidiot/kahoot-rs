@@ -39,7 +39,13 @@ impl Client {
             epoch_time_millis()
         );
 
-        let res = self.client.get(url.parse()?).await?;
+        let req = hyper::Request::builder()
+            .uri(url)
+            .header("User-Agent", crate::USER_AGENT_STR)
+            .body(hyper::Body::empty())
+            .map_err(KahootError::Http)?;
+
+        let res = self.client.request(req).await?;
         let status = res.status();
 
         if status == StatusCode::NOT_FOUND {
