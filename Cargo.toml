@@ -1,2 +1,6 @@
 [workspace]
-members = [ "kahoot", "kahoot-finder" ]
+members = [
+	"cometd",
+	"kahoot", 
+	"kahoot-finder", 
+]
