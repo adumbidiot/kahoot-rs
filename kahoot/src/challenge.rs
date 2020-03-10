@@ -1,18 +1,26 @@
-use crate::KahootError;
-use crate::KahootResult;
+use crate::{
+    KahootError,
+    KahootResult,
+};
 use bytes::Buf;
 use ducc::Ducc;
-use http::header::HeaderName;
-use http::StatusCode;
+use http::{
+    header::HeaderName,
+    StatusCode,
+};
 use serde::Deserialize;
-use std::collections::HashMap;
-use std::string::FromUtf8Error;
+use std::{
+    collections::HashMap,
+    string::FromUtf8Error,
+};
 
 const JS_ENV_PATCHES: &str = include_str!("js_env_patches.js");
 
 fn epoch_time_millis() -> u128 {
-    use std::time::SystemTime;
-    use std::time::UNIX_EPOCH;
+    use std::time::{
+        SystemTime,
+        UNIX_EPOCH,
+    };
 
     SystemTime::now()
         .duration_since(UNIX_EPOCH)

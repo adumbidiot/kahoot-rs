@@ -1,8 +1,12 @@
-use serde::Deserialize;
-use serde::Serialize;
-use std::borrow::Cow;
-use std::convert::Infallible;
-use std::str::FromStr;
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use std::{
+    borrow::Cow,
+    convert::Infallible,
+    str::FromStr,
+};
 
 const HANDSHAKE_PATH: &str = "/meta/handshake";
 const CONNECT_PATH: &str = "/meta/connect";

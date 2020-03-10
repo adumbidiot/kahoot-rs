@@ -2,12 +2,18 @@ mod advice;
 mod channel;
 mod connection_type;
 
-pub use self::advice::Advice;
-pub use self::advice::Reconnect;
-pub use self::channel::Channel;
-pub use self::connection_type::ConnectionType;
-use serde::Deserialize;
-use serde::Serialize;
+pub use self::{
+    advice::{
+        Advice,
+        Reconnect,
+    },
+    channel::Channel,
+    connection_type::ConnectionType,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -1,8 +1,10 @@
-use cometd::async_trait;
-use cometd::client::Context;
-use cometd::json;
-use cometd::packet::Packet;
-use cometd::CometError;
+use cometd::{
+    async_trait,
+    client::Context,
+    json,
+    packet::Packet,
+    CometError,
+};
 
 const DEFAULT_URL: &str = "ws://localhost:8080/cometd";
 const DEFAULT_NAME: &str = "rob";

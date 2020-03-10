@@ -1,13 +1,19 @@
 mod context;
 mod handler;
 
-pub use self::context::Context;
-pub use self::handler::DefaultHandler;
-pub use self::handler::Handler;
-use crate::packet::Channel;
-use crate::transport::WsTransport;
-use crate::CometError;
-use crate::CometResult;
+pub use self::{
+    context::Context,
+    handler::{
+        DefaultHandler,
+        Handler,
+    },
+};
+use crate::{
+    packet::Channel,
+    transport::WsTransport,
+    CometError,
+    CometResult,
+};
 use tungstenite::error::Error as TError;
 
 pub struct Client<T> {

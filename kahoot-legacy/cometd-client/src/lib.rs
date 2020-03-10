@@ -1,19 +1,31 @@
 //https://docs.cometd.org/current/reference/
 
 pub mod handler;
-pub mod packet;
 
-use crate::handler::{Handler, NoopHandler};
-pub use packet::{Channel, Packet};
+use crate::handler::{
+    Handler,
+    NoopHandler,
+};
+pub use cometd::packet::{
+    Channel,
+    ConnectionType,
+    Packet,
+};
 use std::{
     collections::VecDeque,
     io::ErrorKind,
-    time::{Duration, Instant},
+    time::{
+        Duration,
+        Instant,
+    },
 };
 pub use websocket::client::builder::Url;
 use websocket::{
     client::sync::Client as WebSocketClient,
-    message::{Message, OwnedMessage},
+    message::{
+        Message,
+        OwnedMessage,
+    },
     result::WebSocketError,
     stream::sync::NetworkStream,
     ClientBuilder,
@@ -121,16 +133,16 @@ where
 
     pub fn send_handshake(&mut self) {
         let p = Packet::new()
-            .channel(String::from("/meta/handshake"))
+            .channel("/meta/handshake".into())
             .version("1.0".to_string())
             .minimum_version("1.0".to_string())
-            .supported_connection_types(vec!["websocket".to_string()]);
+            .supported_connection_types(vec![ConnectionType::WebSocket]);
         self.request_buffer.push_packet(p);
     }
 
     pub fn send_connect(&mut self) -> CometResult<()> {
         let p = Packet::new()
-            .channel(String::from("/meta/connect"))
+            .channel("/meta/connect".into())
             .client_id(
                 self.state
                     .client_id
@@ -138,17 +150,17 @@ where
                     .ok_or(CometError::MissingClientId)?
                     .to_string(),
             )
-            .connection_type(String::from("websocket"));
+            .connection_type("websocket".into());
         self.request_buffer.push_packet(p);
         Ok(())
     }
 
     fn process_packet(&mut self, p: &Packet) {
-        match p.get_channel() {
+        match p.channel {
             Channel::Handshake => {
                 self.handler
                     .on_handshake(&self.state, &mut self.request_buffer);
-                if let Some(s) = p.get_client_id() {
+                if let Some(s) = &p.client_id {
                     self.state.state = State::Connected;
                     self.state.client_id = Some(s.to_string());
                 } else {

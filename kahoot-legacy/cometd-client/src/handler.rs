@@ -1,4 +1,8 @@
-use crate::{packet::Packet, ClientState, RequestBuffer};
+use crate::{
+    ClientState,
+    Packet,
+    RequestBuffer,
+};
 
 ///A handler trait to customize the behavior of the cometd client
 pub trait Handler {

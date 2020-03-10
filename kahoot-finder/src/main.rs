@@ -1,6 +1,8 @@
 use http::StatusCode;
-use kahoot::Context;
-use kahoot::KahootError;
+use kahoot::{
+    Context,
+    KahootError,
+};
 use std::time::Duration;
 
 const CODE_LIMIT: u64 = 9_999_999; // Longest Code seen: 7,800,484
@@ -55,7 +57,10 @@ async fn main() {
                         }
                     },
                     Err(e) => {
-                        eprintln!("Unable to connect to Bauyex server using websockets, got error: {:#?}", e);
+                        eprintln!(
+                            "Unable to connect to Bauyex server using websockets, got error: {:#?}",
+                            e
+                        );
                     }
                 }
             }

@@ -1,14 +1,20 @@
-use crate::async_trait;
-use crate::message::GetReadyMessage;
-use crate::message::StartQuestionMessage;
-use crate::KahootError;
-use crate::KahootResult;
-use crate::LoginResponse;
-use crate::Message;
-use crate::USER_AGENT_STR;
-use cometd::json;
-use cometd::packet::Packet;
-use cometd::CometError;
+use crate::{
+    async_trait,
+    message::{
+        GetReadyMessage,
+        StartQuestionMessage,
+    },
+    KahootError,
+    KahootResult,
+    LoginResponse,
+    Message,
+    USER_AGENT_STR,
+};
+use cometd::{
+    json,
+    packet::Packet,
+    CometError,
+};
 use parking_lot::Mutex;
 use std::sync::Arc;
 

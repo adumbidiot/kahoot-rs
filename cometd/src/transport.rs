@@ -1,16 +1,28 @@
-use crate::packet::Packet;
-use crate::CometError;
-use crate::CometResult;
-use futures::sink::SinkExt;
-use futures::stream::SplitSink;
-use futures::stream::SplitStream;
-use futures::stream::StreamExt;
-use std::sync::atomic::AtomicU64;
-use std::sync::atomic::Ordering;
-use std::sync::Arc;
-use tokio::io::AsyncWriteExt;
-use tokio::net::TcpStream;
-use tokio::sync::Mutex as TokioMutex;
+use crate::{
+    packet::Packet,
+    CometError,
+    CometResult,
+};
+use futures::{
+    sink::SinkExt,
+    stream::{
+        SplitSink,
+        SplitStream,
+        StreamExt,
+    },
+};
+use std::sync::{
+    atomic::{
+        AtomicU64,
+        Ordering,
+    },
+    Arc,
+};
+use tokio::{
+    io::AsyncWriteExt,
+    net::TcpStream,
+    sync::Mutex as TokioMutex,
+};
 use tokio_tls::TlsStream;
 use tokio_tungstenite::stream::Stream as TStream;
 use tungstenite::Message as TMessage;

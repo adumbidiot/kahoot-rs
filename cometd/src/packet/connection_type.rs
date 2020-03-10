@@ -1,7 +1,11 @@
-use serde::Deserialize;
-use serde::Serialize;
-use std::convert::Infallible;
-use std::str::FromStr;
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use std::{
+    convert::Infallible,
+    str::FromStr,
+};
 
 const WEBSOCKET_STR: &str = "websocket";
 const LONG_POLLING_STR: &str = "long-polling";

@@ -1,18 +1,9 @@
-pub mod challenge;
-pub mod error;
-
-pub use challenge::ChallengeClient;
-
 use cometd_client::{
-    ClientState,
     handler::Handler,
+    ClientState,
     Packet,
     RequestBuffer,
     Url,
-};
-use error::{
-    KahootError,
-    KahootResult,
 };
 use rand::Rng;
 use serde::Deserialize;
@@ -22,6 +13,22 @@ use std::collections::HashMap;
 const QUIZ_INTRO_ID: u64 = 1;
 const QUIZ_ANSWERS_ID: u64 = 2;
 
+pub type KahootResult<T> = Result<T, KahootError>;
+
+#[derive(Debug)]
+pub enum KahootError {
+    Network,
+    InvalidCode,
+    InvalidStatus,
+    Json,
+    ChallengeDecode,
+    MissingToken,
+
+    NoConnection,
+
+    Generic(&'static str),
+}
+
 #[derive(Debug, Deserialize)]
 struct QuizIntroContent {
     #[serde(rename = "quizQuestionAnswers")]
@@ -29,6 +36,24 @@ struct QuizIntroContent {
 
     #[serde(flatten)]
     extra: HashMap<String, serde_json::Value>,
+}
+
+pub struct ChallengeClient {
+    client: kahoot::challenge::Client,
+}
+
+impl ChallengeClient {
+    pub fn new() -> Self {
+        ChallengeClient {
+            client: kahoot::challenge::Client::new(),
+        }
+    }
+
+    pub fn get_challenge(&self, code: &str) -> KahootResult<String> {
+        let mut rt = tokio::runtime::Runtime::new().expect("Valid Runtime");
+        rt.block_on(self.client.get_token(code))
+            .map_err(|_e| KahootError::Generic("Error"))
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -64,7 +89,7 @@ impl Handler for KahootHandler {
         if self.is_first_connect {
             self.is_first_connect = false;
             let p = Packet::new()
-                .channel(String::from("/service/controller"))
+                .channel("/service/controller".into())
                 .client_id(state.get_client_id().unwrap().to_string())
                 .data(json!({
                     "type": "login",
@@ -80,7 +105,7 @@ impl Handler for KahootHandler {
     fn on_unknown(&mut self, p: &Packet, state: &ClientState, request_buffer: &mut RequestBuffer) {
         //{\"questionIndex\":0,\"gameBlockType\":\"quiz\",\"quizQuestionAnswers\":[4]}
 
-        match p.get_channel().as_str() {
+        match p.channel.as_str() {
             "/service/controller" => {
                 //Do nothing for now
                 //Remove noise
@@ -90,7 +115,7 @@ impl Handler for KahootHandler {
                 //Remove noise
             }
             "/service/player" => {
-                if let Some(data) = p.get_data() {
+                if let Some(data) = &p.data {
                     match data.get("id").and_then(|id| id.as_u64()) {
                         Some(QUIZ_INTRO_ID) => {
                             if let Some(intro) = data
@@ -130,7 +155,7 @@ impl Handler for KahootHandler {
 
                                 let content_str = serde_json::to_string(&content).unwrap();
                                 let p = Packet::new()
-                                    .channel(String::from("/service/controller"))
+                                    .channel("/service/controller".into())
                                     .client_id(state.get_client_id().unwrap().to_string())
                                     .data(json!({
                                         "content": content_str,
@@ -192,9 +217,7 @@ pub struct Client {
 
 impl Client {
     pub fn new() -> Self {
-        Client {
-            client: None,
-        }
+        Client { client: None }
     }
 
     pub fn join(&mut self, settings: JoinSettings) -> KahootResult<()> {

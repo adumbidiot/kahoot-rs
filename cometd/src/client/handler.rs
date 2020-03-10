@@ -1,6 +1,8 @@
-use crate::client::Context;
-use crate::packet::Packet;
-use crate::CometError;
+use crate::{
+    client::Context,
+    packet::Packet,
+    CometError,
+};
 
 #[crate::async_trait]
 pub trait Handler: Send + Sync {

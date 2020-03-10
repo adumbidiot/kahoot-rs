@@ -3,4 +3,5 @@ members = [
 	"cometd",
 	"kahoot", 
 	"kahoot-finder", 
+	"kahoot-legacy"
 ]

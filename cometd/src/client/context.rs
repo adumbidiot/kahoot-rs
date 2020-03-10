@@ -1,10 +1,14 @@
-use crate::packet::Advice;
-use crate::packet::Channel;
-use crate::packet::ConnectionType;
-use crate::packet::Packet;
-use crate::transport::WsTransport;
-use crate::CometError;
-use crate::CometResult;
+use crate::{
+    packet::{
+        Advice,
+        Channel,
+        ConnectionType,
+        Packet,
+    },
+    transport::WsTransport,
+    CometError,
+    CometResult,
+};
 use parking_lot::Mutex;
 use std::sync::Arc;
 

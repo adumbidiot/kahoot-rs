@@ -3,12 +3,18 @@ pub mod client;
 pub mod error;
 pub mod message;
 
-pub use crate::client::Client;
-pub use crate::client::Context;
-pub use crate::client::Handler;
-pub use crate::error::KahootError;
-pub use crate::error::KahootResult;
-pub use crate::message::Message;
+pub use crate::{
+    client::{
+        Client,
+        Context,
+        Handler,
+    },
+    error::{
+        KahootError,
+        KahootResult,
+    },
+    message::Message,
+};
 pub use async_trait::async_trait;
 
 const USER_AGENT_STR: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36";
