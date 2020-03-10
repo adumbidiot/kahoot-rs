@@ -1,14 +1,11 @@
 [package]
-name = "kahoot-legacy"
-version = "0.0.1"
+name = "kahoot-cli"
+version = "0.0.3"
 authors = ["adumbidiot <nathaniel.daniel23@outlook.com>"]
 edition = "2018"
 
 [dependencies]
-serde_json = "1.0.48"
-serde = { version = "1.0.104", features = [ "derive" ] }
-cometd-client = {path = "./cometd-client"}
+kahoot = { path = "../kahoot" }
 rand = "0.7.3"
 tokio = "0.2.13"
-
-kahoot = { git = "https://github.com/adumbidiot/kahoot-rs" }
+lazy_static = "1.4.0"
