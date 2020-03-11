@@ -9,8 +9,10 @@ use crate::{
     CometError,
     CometResult,
 };
-use parking_lot::Mutex;
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    Mutex,
+};
 
 #[derive(Clone)]
 pub struct Context {
@@ -37,7 +39,14 @@ impl Context {
 
     pub async fn send_buffered_packets(&self) -> CometResult<()> {
         self.transport
-            .send_packet(self.inner.lock().request_buffer.drain(..).collect())
+            .send_packet(
+                self.inner
+                    .lock()
+                    .unwrap()
+                    .request_buffer
+                    .drain(..)
+                    .collect(),
+            )
             .await
     }
 
@@ -53,9 +62,10 @@ impl Context {
     }
 
     pub async fn send_connect(&self) -> CometResult<()> {
+        let client_id = self.get_client_id().ok_or(CometError::MissingClientId)?;
         let connect_packet = Packet::new()
             .channel(Channel::Connect)
-            .client_id(self.get_client_id().ok_or(CometError::MissingClientId)?)
+            .client_id(client_id)
             .advice(Advice::new())
             .connection_type(ConnectionType::WebSocket);
 
@@ -76,7 +86,7 @@ impl Context {
     }
 
     pub fn get_client_id(&self) -> Option<String> {
-        self.inner.lock().client_id.as_ref().cloned()
+        self.inner.lock().unwrap().client_id.as_ref().cloned()
     }
 }
 

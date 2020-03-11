@@ -12,7 +12,6 @@ tokio-tungstenite = { version = "0.10.1", features = [ "tls" ] }
 tokio = { version = "0.2.13", features = [ "stream", "sync", "time" ] }
 tokio-tls = "0.3.0"
 tungstenite = "0.10.1"
-parking_lot = "0.10.0"
 async-trait = "0.1.24"
 
 [dev-dependencies]

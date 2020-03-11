@@ -55,8 +55,11 @@ impl<T: Handler> Client<T> {
                                 if let (Some(true), Some(client_id)) =
                                     (packet.successful, packet.client_id)
                                 {
-                                    self.ctx.inner.lock().client_id = Some(client_id);
-                                    self.ctx.inner.lock().is_reconnect = true;
+                                    {
+                                        let mut lock = self.ctx.inner.lock().unwrap();
+                                        lock.client_id = Some(client_id);
+                                        lock.is_reconnect = true;
+                                    }
 
                                     match self.ctx.send_connect().await {
                                         Ok(_) => {}
@@ -82,10 +85,16 @@ impl<T: Handler> Client<T> {
                                         }
                                     }
                                 } else {
-                                    let mut lock = self.ctx.inner.lock();
-                                    if lock.is_reconnect {
-                                        lock.is_reconnect = false;
-                                        drop(lock);
+                                    let is_reconnect = {
+                                        let mut lock = self.ctx.inner.lock().unwrap();
+                                        if lock.is_reconnect {
+                                            lock.is_reconnect = false;
+                                            true
+                                        } else {
+                                            false
+                                        }
+                                    };
+                                    if is_reconnect {
                                         self.handler.on_reconnect(self.ctx.clone()).await;
                                     }
                                 }
@@ -99,7 +108,7 @@ impl<T: Handler> Client<T> {
                                 }
                             }
                             Channel::Subscribe => {
-                                // WIP
+                                // TODO: Figure out how to handle failed subscriptions
                                 assert_eq!(packet.successful, Some(true));
                             }
                             _ => {

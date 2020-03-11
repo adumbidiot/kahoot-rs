@@ -1,0 +1,11 @@
+[package]
+name = "kahoot-swarm"
+version = "0.0.1"
+authors = [ "adumbidiot <nathaniel.daniel23@outlook.com>" ]
+edition = "2018"
+
+[dependencies]
+kahoot = { path = "../kahoot" }
+tokio = { version = "0.2.13", features = [ "macros", "rt-threaded" ]}
+rand = "0.7.3"
+futures = "0.3.4"

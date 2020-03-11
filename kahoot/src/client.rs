@@ -1,9 +1,11 @@
+mod handler;
+
+pub use self::handler::{
+    DefaultHandler,
+    Handler,
+};
 use crate::{
     async_trait,
-    message::{
-        GetReadyMessage,
-        StartQuestionMessage,
-    },
     KahootError,
     KahootResult,
     LoginResponse,
@@ -15,8 +17,10 @@ use cometd::{
     packet::Packet,
     CometError,
 };
-use parking_lot::Mutex;
-use std::sync::Arc;
+use std::sync::{
+    Arc,
+    Mutex,
+};
 
 pub const DEFAULT_DEVICE_WIDTH: u64 = 1920;
 pub const DEFAULT_DEVICE_HEIGHT: u64 = 1080;
@@ -133,7 +137,8 @@ impl Context {
     }
 
     pub async fn shutdown(&self) -> KahootResult<()> {
-        self.ctx.shutdown().await.map_err(From::from)
+        self.ctx.shutdown().await?;
+        Ok(())
     }
 }
 
@@ -164,7 +169,8 @@ impl<T: Handler + 'static> cometd::client::Handler for KahootHandler<T> {
 
                 if let Some(login_response) = LoginResponse::from_value(data) {
                     if login_response.error.as_ref().is_some() {
-                        *self.exit_error.lock() = Some(KahootError::InvalidLogin(login_response));
+                        *self.exit_error.lock().unwrap() =
+                            Some(KahootError::InvalidLogin(login_response));
                         ctx.shutdown().await.expect("Shutdown");
                     } else {
                         self.handler.on_login(self.kahoot_ctx(&ctx)).await;
@@ -207,25 +213,11 @@ impl<T: Handler + 'static> cometd::client::Handler for KahootHandler<T> {
     }
 }
 
-#[async_trait]
-pub trait Handler: Send + Sync {
-    async fn on_login(&self, _ctx: Context) {}
-    async fn on_get_ready(&self, _ctx: Context, _msg: GetReadyMessage) {}
-    async fn on_start_question(&self, _ctx: Context, _msg: StartQuestionMessage) {}
-
-    async fn on_error(&self, _ctx: Context, _e: KahootError) {}
-}
-
-pub struct DefaultHandler;
-
-#[async_trait]
-impl Handler for DefaultHandler {}
-
 pub struct Client<T> {
     client: cometd::Client<KahootHandler<T>>,
 }
 
-impl<T: Handler + 'static> Client<T> {
+impl<T: Handler + Send + 'static> Client<T> {
     pub async fn connect_with_handler(
         code: String,
         name: String,
@@ -243,10 +235,14 @@ impl<T: Handler + 'static> Client<T> {
     pub async fn run(&mut self) -> KahootResult<()> {
         self.client.run().await;
 
-        if let Some(e) = self.client.handler.exit_error.lock().take() {
+        if let Some(e) = self.client.handler.exit_error.lock().unwrap().take() {
             return Err(e);
         }
 
         Ok(())
+    }
+
+    pub fn handler(&self) -> Arc<T> {
+        self.client.handler.handler.clone()
     }
 }
