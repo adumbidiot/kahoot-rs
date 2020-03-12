@@ -44,7 +44,10 @@ impl kahoot::Handler for BotHandler {
     ) {
         let choice = rand::thread_rng().gen_range(0, msg.quiz_question_answers[msg.question_index]);
         println!("Client {} submitting answer...", self.id);
-        tokio::time::delay_for(std::time::Duration::from_millis(250)).await; // Needed or kahoot thinks you were too fast
+        tokio::time::delay_for(std::time::Duration::from_millis(
+            250 + ((self.id as f32 / 100.0) * 1000.0) as u64, // TODO: Can we go faster here?
+        ))
+        .await; // Needed or kahoot thinks you were too fast
         match ctx.submit_answer(choice).await {
             Ok(_) => {}
             Err(e) => {
@@ -93,10 +96,13 @@ impl Swarm {
 
     pub async fn add_n_workers(&self, n: usize) -> KahootResult<()> {
         // TODO: Optimize
-        let futures: Vec<_> = (0..n)
-            .map(|_| async move { self.add_worker().await })
+        let mut futures: Vec<_> = (0..n as u64)
+            .map(|_i| Box::pin(async move { self.add_worker().await }))
             .collect();
-        futures::future::join_all(futures).await;
+
+        for chunk in futures.chunks_mut(10) {
+            futures::future::join_all(chunk).await;
+        }
 
         Ok(())
     }
@@ -137,7 +143,7 @@ impl Swarm {
         Ok(())
     }
 
-    pub async fn run(&mut self) {
+    pub async fn run(&self) {
         while let Some(msg) = self.rx.lock().unwrap().recv().await {
             match &msg.data {
                 TaskMessageData::Login { name } => {
@@ -200,7 +206,10 @@ async fn main() {
     let _ = stdout().flush();
     let base_name = read_line();
 
-    let mut swarm = Swarm::new(code, base_name);
-    swarm.add_n_workers(max_clients).await.unwrap();
+    let swarm = Swarm::new(code, base_name);
+    let swarm1 = swarm.clone();
+    tokio::spawn(async move {
+        swarm1.add_n_workers(max_clients).await.unwrap();
+    });
     swarm.run().await;
 }

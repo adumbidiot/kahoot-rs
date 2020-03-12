@@ -24,7 +24,7 @@ use std::sync::{
 
 pub const DEFAULT_DEVICE_WIDTH: u64 = 1920;
 pub const DEFAULT_DEVICE_HEIGHT: u64 = 1080;
-pub const DEFAULT_LAG: u64 = 23;
+pub const DEFAULT_LAG: u64 = 0;
 pub const CONTROLLER_CHANNEL: &str = "/service/controller";
 pub const PLAYER_CHANNEL: &str = "/service/player";
 pub const STATUS_CHANNEL: &str = "/service/status";
