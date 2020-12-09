@@ -1,0 +1,77 @@
+name: Rust
+'on':
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy 
+          override: true
+      
+      - name: Fetch
+        uses: actions-rs/cargo@v1
+        with:
+          command: fetch
+      
+      - name: Clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: '--tests --all -- -D warnings'
+        
+  # We use nightly options for formatting,
+  # so split linting to add freedom to choose toolchains for the rest of the linting steps.       
+  lint-rustfmt:
+    name: Lint RustFmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          components: rustfmt
+          override: true
+          
+      - name: RustFmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: '-- --check --color always'
+          
+  cargo-deny:
+    name: Deny
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        
+      - name: Deny
+        uses: EmbarkStudios/cargo-deny-action@v1
+        
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        
+      - name: Build
+        run: cargo build --verbose
+        
+      - name: Run Tests
+        run: cargo test --all --verbose
