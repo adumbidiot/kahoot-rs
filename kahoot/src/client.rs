@@ -30,18 +30,18 @@ pub const PLAYER_CHANNEL: &str = "/service/player";
 pub const STATUS_CHANNEL: &str = "/service/status";
 
 pub(crate) struct KahootHandler<T> {
-    pub(crate) code: Arc<String>,
-    pub(crate) name: Arc<String>,
+    pub(crate) code: Arc<str>,
+    pub(crate) name: Arc<str>,
     pub(crate) handler: Arc<T>,
 
     pub(crate) exit_error: Arc<Mutex<Option<KahootError>>>,
 }
 
 impl<T> KahootHandler<T> {
-    pub(crate) fn new(code: String, name: String, handler: T) -> Self {
+    pub(crate) fn new(code: &str, name: &str, handler: T) -> Self {
         Self {
-            code: Arc::new(code),
-            name: Arc::new(name),
+            code: Arc::from(code),
+            name: Arc::from(name),
             handler: Arc::new(handler),
             exit_error: Arc::new(Mutex::new(None)),
         }
@@ -55,12 +55,12 @@ impl<T> KahootHandler<T> {
 #[derive(Clone)]
 pub struct Context {
     pub ctx: cometd::client::Context,
-    pub code: Arc<String>,
-    pub name: Arc<String>,
+    pub code: Arc<str>,
+    pub name: Arc<str>,
 }
 
 impl Context {
-    pub fn new(ctx: cometd::client::Context, code: Arc<String>, name: Arc<String>) -> Self {
+    pub fn new(ctx: cometd::client::Context, code: Arc<str>, name: Arc<str>) -> Self {
         Context { ctx, code, name }
     }
 
@@ -75,20 +75,22 @@ impl Context {
             }
         });
 
-        serde_json::to_string(&content).map_err(From::from)
+        Ok(serde_json::to_string(&content)?)
     }
 
+    /// Login to kahoot
     pub async fn login(&self, name: &str) -> KahootResult<()> {
+        let client_id = self
+            .ctx
+            .get_client_id()
+            .ok_or(KahootError::Comet(CometError::MissingClientId))?;
+
         let packet = Packet::new()
             .channel(CONTROLLER_CHANNEL.into())
-            .client_id(
-                self.ctx
-                    .get_client_id()
-                    .ok_or(KahootError::Comet(CometError::MissingClientId))?,
-            )
+            .client_id(client_id)
             .data(json!({
                 "type": "login",
-                "gameid": self.code.as_str(),
+                "gameid": &*self.code,
                 "host": "kahoot.it",
                 "name": name,
                 "content": self.get_device_data_str()?,
@@ -103,7 +105,13 @@ impl Context {
         Ok(())
     }
 
+    /// Submit an answer
     pub async fn submit_answer(&self, choice: usize) -> KahootResult<()> {
+        let client_id = self
+            .ctx
+            .get_client_id()
+            .ok_or(KahootError::Comet(CometError::MissingClientId))?;
+
         let content = json!({
             "choice": choice,
             "meta": {
@@ -114,14 +122,10 @@ impl Context {
 
         let packet = Packet::new()
             .channel(CONTROLLER_CHANNEL.into())
-            .client_id(
-                self.ctx
-                    .get_client_id()
-                    .ok_or(KahootError::Comet(CometError::MissingClientId))?,
-            )
+            .client_id(client_id)
             .data(json!({
                 "content": serde_json::to_string(&content)?,
-                "gameid": self.code.as_str(),
+                "gameid": &*self.code,
                 "host": "kahoot.it",
                 "id": 45,
                 "type": "message",
@@ -132,7 +136,7 @@ impl Context {
         Ok(())
     }
 
-    pub fn get_username(&self) -> Arc<String> {
+    pub fn get_username(&self) -> Arc<str> {
         self.name.clone()
     }
 
@@ -193,9 +197,12 @@ impl<T: Handler + 'static> cometd::client::Handler for KahootHandler<T> {
                         self.handler.on_get_ready(self.kahoot_ctx(&ctx), msg).await;
                     }
                     Message::StartQuestion { msg } => {
-                        self.handler
-                            .on_start_question(self.kahoot_ctx(&ctx), msg)
-                            .await;
+                        let ctx = self.kahoot_ctx(&ctx);
+                        let handler = self.handler.clone();
+
+                        tokio::spawn(async move {
+                            handler.on_start_question(ctx, msg).await;
+                        });
                     }
                     _msg => {
                         // dbg!(msg);
@@ -211,7 +218,7 @@ impl<T: Handler + 'static> cometd::client::Handler for KahootHandler<T> {
     async fn on_error(&self, ctx: cometd::client::Context, error: CometError) {
         let handler = self.handler.clone();
         let ctx = self.kahoot_ctx(&ctx);
-        
+
         tokio::spawn(async move {
             let _result = handler.on_error(ctx, error.into()).await;
         });
@@ -223,6 +230,7 @@ pub struct Client<T> {
 }
 
 impl<T: Handler + Send + 'static> Client<T> {
+    /// Connect with the given handler
     pub async fn connect_with_handler(
         code: String,
         name: String,
@@ -230,13 +238,14 @@ impl<T: Handler + Send + 'static> Client<T> {
     ) -> KahootResult<Client<T>> {
         let token = crate::challenge::Client::new().get_token(&code).await?;
         let url = format!("wss://kahoot.it/cometd/{}/{}", &code, token);
-        let handler = KahootHandler::new(code, name, handler);
+        let handler = KahootHandler::new(&code, &name, handler);
         let client = cometd::Client::connect_with_handler(&url, handler).await?;
         let client = Client { client };
 
         Ok(client)
     }
 
+    /// Run the client
     pub async fn run(&mut self) -> KahootResult<()> {
         self.client.run().await;
 
@@ -247,6 +256,7 @@ impl<T: Handler + Send + 'static> Client<T> {
         Ok(())
     }
 
+    /// Get the handler
     pub fn handler(&self) -> Arc<T> {
         self.client.handler.handler.clone()
     }
