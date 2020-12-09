@@ -3,6 +3,7 @@ name = "kahoot"
 version = "0.0.1"
 authors = [ "adumbidiot <nathaniel.daniel23@outlook.com>" ]
 edition = "2018"
+license = "MIT"
 
 [dependencies]
 async-trait = "0.1.24"
