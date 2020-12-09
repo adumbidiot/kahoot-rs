@@ -209,7 +209,12 @@ impl<T: Handler + 'static> cometd::client::Handler for KahootHandler<T> {
     }
 
     async fn on_error(&self, ctx: cometd::client::Context, error: CometError) {
-        self.handler.on_error(self.kahoot_ctx(&ctx), error.into());
+        let handler = self.handler.clone();
+        let ctx = self.kahoot_ctx(&ctx);
+        
+        tokio::spawn(async move {
+            let _result = handler.on_error(ctx, error.into()).await;
+        });
     }
 }
 

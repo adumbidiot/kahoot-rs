@@ -23,7 +23,7 @@ use tokio::{
     net::TcpStream,
     sync::Mutex as TokioMutex,
 };
-use tokio_tls::TlsStream;
+use tokio_native_tls::TlsStream;
 use tokio_tungstenite::stream::Stream as TStream;
 use tungstenite::Message as TMessage;
 
