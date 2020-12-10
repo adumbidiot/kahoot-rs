@@ -16,20 +16,24 @@ use crate::{
 };
 use tungstenite::error::Error as TError;
 
+/// A cometd client
 pub struct Client<T> {
     ctx: Context,
     transport: WsTransport,
 
+    /// The event handler
     pub handler: T,
 }
 
 impl Client<DefaultHandler> {
+    /// Connect to the url with the default handler
     pub async fn connect(url: &str) -> CometResult<Self> {
         Self::connect_with_handler(url, DefaultHandler).await
     }
 }
 
 impl<T: Handler> Client<T> {
+    /// Connect to the url with the given handler
     pub async fn connect_with_handler(url: &str, handler: T) -> CometResult<Self> {
         let (stream, _response) = tokio_tungstenite::connect_async(url).await?;
         let transport = WsTransport::new(stream);

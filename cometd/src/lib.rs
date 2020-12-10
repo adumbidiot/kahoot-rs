@@ -8,18 +8,26 @@ pub use serde_json::json;
 
 pub type CometResult<T> = Result<T, CometError>;
 
-#[derive(Debug)]
+/// Comet Error
+#[derive(Debug, thiserror::Error)]
 pub enum CometError {
-    Ws(tungstenite::error::Error),
-    Json(serde_json::Error),
-    Io(std::io::Error),
+    /// Websocket Error
+    #[error("{0}")]
+    Ws(#[from] tungstenite::Error),
 
+    /// Json decode Error
+    #[error("{0}")]
+    Json(#[from] serde_json::Error),
+
+    /// IO Error
+    #[error("{0}")]
+    Io(#[from] std::io::Error),
+
+    /// The client is shutting down
+    #[error("the client is shutting down")]
     ClientExited,
-    MissingClientId,
-}
 
-impl From<tungstenite::error::Error> for CometError {
-    fn from(e: tungstenite::error::Error) -> Self {
-        Self::Ws(e)
-    }
+    /// The client id is missing
+    #[error("missing client id")]
+    MissingClientId,
 }
