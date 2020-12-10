@@ -259,7 +259,7 @@ pub fn decode_challenge_boa(challenge_str: &str) -> Result<String, String> {
     let _patches = ctx.eval(JS_ENV_PATCHES).map_err(|e| {
         e.to_string(&mut ctx)
             .map(|s| s.as_str().to_string())
-            .unwrap_or("Missing Error String".into())
+            .unwrap_or_else(|_| "Missing Error String".into())
     })?;
 
     let challenge = ctx
@@ -267,7 +267,7 @@ pub fn decode_challenge_boa(challenge_str: &str) -> Result<String, String> {
         .map_err(|e| {
             e.to_string(&mut ctx)
                 .map(|s| s.as_str().to_string())
-                .unwrap_or("Missing Error String".into())
+                .unwrap_or_else(|_| "Missing Error String".into())
         })?
         .to_string(&mut ctx)
         .map(|s| s.as_str().to_string())

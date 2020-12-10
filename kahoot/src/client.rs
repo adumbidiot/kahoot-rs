@@ -192,7 +192,7 @@ impl<T: Handler + 'static> cometd::client::Handler for KahootHandler<T> {
                         tokio::spawn(async move { handler.on_login(ctx).await });
                     }
                 } else {
-                    // println!("Controller Packet: {:#?}", packet);
+                    warn!("Controller Packet: {:#?}", packet);
                 }
             }
             STATUS_CHANNEL => {
@@ -279,7 +279,7 @@ impl<T: Handler + Send + 'static> Client<T> {
     pub async fn run(&mut self) -> KahootResult<()> {
         trace!("running kahoot client");
 
-        self.client.run().await;
+        self.client.run().await?;
 
         if let Some(e) = self.client.handler.exit_error.lock().unwrap().take() {
             return Err(e);

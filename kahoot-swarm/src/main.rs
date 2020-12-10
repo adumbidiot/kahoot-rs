@@ -172,7 +172,7 @@ impl Swarm {
                                     println!("Worker #{} will not be restarted as it tried to log in with a duplicate name", msg.id);
 
                                     // TODO: Proper shutdown
-                                    break;
+                                    // break;
                                 }
                             }
 
