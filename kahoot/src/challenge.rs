@@ -24,15 +24,17 @@ fn epoch_time_millis() -> u128 {
 
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap()
+        .expect("Valid SystemTime")
         .as_millis()
 }
 
+/// Challenge Client
 pub struct Client {
     client: hyper::Client<hyper_tls::HttpsConnector<hyper::client::HttpConnector>>,
 }
 
 impl Client {
+    /// Make a new challenge client
     pub fn new() -> Self {
         let https = hyper_tls::HttpsConnector::new();
         let client = hyper::Client::builder().build::<_, hyper::Body>(https);
@@ -40,6 +42,7 @@ impl Client {
         Self { client }
     }
 
+    /// Probe a code
     pub async fn probe_code(&self, code: &str) -> KahootResult<ProbeResult> {
         let url = format!(
             "https://kahoot.it/reserve/session/{}/?{}",
@@ -50,8 +53,7 @@ impl Client {
         let req = hyper::Request::builder()
             .uri(url)
             .header("User-Agent", crate::USER_AGENT_STR)
-            .body(hyper::Body::empty())
-            .map_err(KahootError::Http)?;
+            .body(hyper::Body::empty())?;
 
         let res = self.client.request(req).await?;
         let status = res.status();
@@ -72,9 +74,11 @@ impl Client {
             .to_string();
         let body = hyper::body::aggregate(res.into_body()).await?;
         let response: GetChallengeJsonResponse = serde_json::from_slice(body.bytes())?;
+
         Ok(ProbeResult { token, response })
     }
 
+    /// Get the token for a code
     pub async fn get_token(&self, code: &str) -> KahootResult<String> {
         let res = self.probe_code(code).await?;
         let token = crate::challenge::decode(&res.token, &res.response.challenge)?;
@@ -88,6 +92,7 @@ impl Default for Client {
     }
 }
 
+/// The probe response
 #[derive(Debug)]
 pub struct ProbeResult {
     token: String,
@@ -113,22 +118,38 @@ pub struct GetChallengeJsonResponse {
     extra: HashMap<String, serde_json::Value>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum DecodeError {
-    ChallegeDecode(SendDuccError),
-    TokenDecode(DecodeTokenError),
+    /// Challenge decode error
+    #[error("{0}")]
+    ChallegeDecode(#[from] SendDuccError),
+
+    /// Token deocode error
+    #[error("{0}")]
+    TokenDecode(#[from] DecodeTokenError),
 }
 
-impl From<DecodeTokenError> for DecodeError {
-    fn from(e: DecodeTokenError) -> Self {
-        Self::TokenDecode(e)
+impl From<ducc::Error> for DecodeError {
+    fn from(e: ducc::Error) -> Self {
+        DecodeError::ChallegeDecode(e.into())
     }
 }
 
-#[derive(Debug)]
+/// Sendable DuccError
+#[derive(Debug, thiserror::Error)]
 pub struct SendDuccError {
+    /// Error Kind
+    #[source]
     pub kind: SendDuccErrorKind,
+
+    /// Error Context
     pub context: Vec<String>,
+}
+
+impl std::fmt::Display for SendDuccError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.kind.fmt(f)
+    }
 }
 
 impl From<ducc::Error> for SendDuccError {
@@ -140,22 +161,30 @@ impl From<ducc::Error> for SendDuccError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum SendDuccErrorKind {
+    #[error("to js conversion error")]
     ToJsConversionError {
         from: &'static str,
         to: &'static str,
     },
+    #[error("from js conversion error")]
     FromJsConversionError {
         from: &'static str,
         to: &'static str,
     },
+    #[error("runtime error")]
     RuntimeError {
         code: ducc::RuntimeErrorCode,
         name: String,
     },
+    #[error("recursive mut callback")]
     RecursiveMutCallback,
+
+    #[error("external error")]
     ExternalError,
+
+    #[error("not a function")]
     NotAFunction,
 }
 
@@ -178,27 +207,34 @@ impl From<ducc::ErrorKind> for SendDuccErrorKind {
     }
 }
 
+/// Decode a token
 pub fn decode(encoded_token: &str, encoded_challenge: &str) -> Result<String, DecodeError> {
-    let decoded_challenge = decode_challenge(encoded_challenge)
-        .map_err(|e| DecodeError::ChallegeDecode(SendDuccError::from(e)))?;
+    let decoded_challenge = decode_challenge(encoded_challenge)?;
     let decoded_token = decode_token(encoded_token, &decoded_challenge)?;
     Ok(decoded_token)
 }
 
+/// Decode a challenge
 pub fn decode_challenge(challenge_str: &str) -> ducc::Result<String> {
     let ducc = Ducc::new();
     ducc.exec(JS_ENV_PATCHES, Some("env_patches.js"), Default::default())?;
     ducc.exec(challenge_str, Some("challenge.js"), Default::default())
 }
 
-#[derive(Debug)]
+/// Decode Token Error
+#[derive(Debug, thiserror::Error)]
 pub enum DecodeTokenError {
-    Base64(base64::DecodeError),
-    InvalidString(FromUtf8Error),
+    /// Base64 decode error
+    #[error("{0}")]
+    Base64(#[from] base64::DecodeError),
+
+    /// Invalid string error
+    #[error("{0}")]
+    InvalidString(#[from] FromUtf8Error),
 }
 
 pub fn decode_token(token: &str, challenge: &str) -> Result<String, DecodeTokenError> {
-    let mut raw_token = base64::decode(token).map_err(DecodeTokenError::Base64)?;
+    let mut raw_token = base64::decode(token)?;
     let challenge_bytes = challenge.as_bytes();
     let challenge_len = challenge_bytes.len();
 
@@ -206,7 +242,7 @@ pub fn decode_token(token: &str, challenge: &str) -> Result<String, DecodeTokenE
         *byte ^= challenge_bytes[i % challenge_len];
     }
 
-    String::from_utf8(raw_token).map_err(DecodeTokenError::InvalidString)
+    Ok(String::from_utf8(raw_token)?)
 }
 
 #[cfg(test)]

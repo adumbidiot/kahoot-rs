@@ -57,7 +57,7 @@ impl kahoot::Handler for BotHandler {
     }
 
     async fn on_error(&self, _ctx: kahoot::Context, e: kahoot::KahootError) {
-        println!("Error: {:#?}", e);
+        println!("Error: {}", e);
     }
 }
 
