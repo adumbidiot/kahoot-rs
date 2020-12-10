@@ -18,6 +18,10 @@ pub enum KahootError {
     #[error("invalid http status {0}")]
     InvalidStatus(http::StatusCode),
 
+    /// A blocking task panicked
+    #[error("{0}")]
+    TokioJoin(#[from] tokio::task::JoinError),
+
     /// Json Error
     #[error("{0}")]
     Json(#[from] serde_json::Error),

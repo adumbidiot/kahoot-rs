@@ -4,12 +4,14 @@ use crate::{
     message::{
         GetReadyMessage,
         StartQuestionMessage,
+        UsernameAcceptedMessage,
     },
 };
 
 #[crate::async_trait]
 pub trait Handler: Send + Sync {
     async fn on_login(&self, _ctx: Context) {}
+    async fn on_username_accepted(&self, _ctx: Context, _msg: UsernameAcceptedMessage) {}
     async fn on_get_ready(&self, _ctx: Context, _msg: GetReadyMessage) {}
     async fn on_start_question(&self, _ctx: Context, _msg: StartQuestionMessage) {}
 

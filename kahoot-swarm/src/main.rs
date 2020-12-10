@@ -96,19 +96,25 @@ impl Swarm {
 
     pub async fn add_n_workers(&self, n: usize) -> KahootResult<()> {
         // TODO: Optimize
+        let self_clone = self.clone();
         let mut futures: Vec<_> = (0..n as u64)
-            .map(|_i| Box::pin(async move { self.add_worker().await }))
+            .map(move |_i| {
+                let self_clone = self_clone.clone();
+                tokio::spawn(async move { self_clone.add_worker().await.unwrap() })
+            })
             .collect();
 
-        for chunk in futures.chunks_mut(10) {
+        let chunk_size = n; // 10
+        for chunk in futures.chunks_mut(chunk_size) {
             futures::future::join_all(chunk).await;
         }
 
         Ok(())
     }
 
+    /// Add a worker
     pub async fn add_worker(&self) -> KahootResult<()> {
-        let id = self.num_workers.fetch_add(1, Ordering::SeqCst);
+        let id = self.num_workers.fetch_add(1, Ordering::Release);
         self.add_worker_with_id(id).await?;
         Ok(())
     }
@@ -127,7 +133,7 @@ impl Swarm {
             match res {
                 Ok(client) => break client,
                 Err(e) => {
-                    eprintln!("Failed to join, got error: {:#?}", e);
+                    eprintln!("Failed to join: {}", e);
                 }
             }
         };
@@ -143,20 +149,47 @@ impl Swarm {
         Ok(())
     }
 
+    /// Run the swarm
     pub async fn run(&self) {
         while let Some(msg) = self.rx.lock().unwrap().recv().await {
             match &msg.data {
                 TaskMessageData::Login { name } => {
                     println!("Worker #{} logged in as {}", msg.id, name);
                 }
-                TaskMessageData::Exit(_res) => loop {
-                    match self.add_worker_with_id(msg.id).await {
-                        Ok(_) => break,
+                TaskMessageData::Exit(exit_result) => {
+                    println!("Worker #{} exited", msg.id);
+
+                    match exit_result {
+                        Ok(()) => {
+                            println!(
+                                "Worker #{} will not be restarted as it exited without error",
+                                msg.id
+                            );
+                        }
                         Err(e) => {
-                            eprintln!("Error readding dead worker: {:#?}", e);
+                            if let kahoot::KahootError::InvalidLogin(invalid_login) = e {
+                                if invalid_login.description.as_deref() == Some("Duplicate name") {
+                                    println!("Worker #{} will not be restarted as it tried to log in with a duplicate name", msg.id);
+
+                                    // TODO: Proper shutdown
+                                    break;
+                                }
+                            }
+
+                            let self_clone = self.clone();
+                            tokio::spawn(async move {
+                                loop {
+                                    match self_clone.add_worker_with_id(msg.id).await {
+                                        Ok(_) => break,
+                                        Err(e) => {
+                                            eprintln!("Error readding dead worker: {}", e);
+                                        }
+                                    }
+                                }
+                            });
                         }
                     }
-                },
+                }
             }
         }
     }
@@ -170,6 +203,8 @@ fn read_line() -> String {
 
 #[tokio::main(threaded_scheduler)]
 async fn main() {
+    env_logger::init();
+
     let challenge_client = kahoot::challenge::Client::new();
 
     let code = loop {
@@ -182,10 +217,7 @@ async fn main() {
                 break code;
             }
             Err(e) => {
-                println!(
-                    "Failed to get challenge for {}, got error: {:#?}\n",
-                    code, e
-                );
+                println!("Failed to get challenge for {}: {}\n", code, e);
             }
         }
     };
@@ -197,7 +229,7 @@ async fn main() {
         match read_line().parse::<usize>() {
             Ok(max_clients) => break max_clients,
             Err(e) => {
-                println!("Invalid value, got error: {:#?}\n", e);
+                println!("Invalid value: {}\n", e);
             }
         }
     };

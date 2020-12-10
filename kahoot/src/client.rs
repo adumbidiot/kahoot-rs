@@ -17,6 +17,10 @@ use cometd::{
     packet::Packet,
     CometError,
 };
+use log::{
+    trace,
+    warn,
+};
 use std::sync::{
     Arc,
     Mutex,
@@ -80,6 +84,8 @@ impl Context {
 
     /// Login to kahoot
     pub async fn login(&self, name: &str) -> KahootResult<()> {
+        trace!("logging in as '{}'", name);
+
         let client_id = self
             .ctx
             .get_client_id()
@@ -136,12 +142,15 @@ impl Context {
         Ok(())
     }
 
+    /// Get the username
     pub fn get_username(&self) -> Arc<str> {
         self.name.clone()
     }
 
+    /// Try to shutdown the client
     pub async fn shutdown(&self) -> KahootResult<()> {
         self.ctx.shutdown().await?;
+
         Ok(())
     }
 }
@@ -177,14 +186,17 @@ impl<T: Handler + 'static> cometd::client::Handler for KahootHandler<T> {
                             Some(KahootError::InvalidLogin(login_response));
                         ctx.shutdown().await.expect("Shutdown");
                     } else {
-                        self.handler.on_login(self.kahoot_ctx(&ctx)).await;
+                        let handler = self.handler.clone();
+                        let ctx = self.kahoot_ctx(&ctx);
+
+                        tokio::spawn(async move { handler.on_login(ctx).await });
                     }
                 } else {
                     // println!("Controller Packet: {:#?}", packet);
                 }
             }
             STATUS_CHANNEL => {
-                // println!("Status Packet: {:#?}", packet);
+                warn!("Status Packet: {:#?}", packet);
             }
             PLAYER_CHANNEL => {
                 let data = match packet.data {
@@ -193,8 +205,17 @@ impl<T: Handler + 'static> cometd::client::Handler for KahootHandler<T> {
                 };
 
                 match Message::from_value(data) {
+                    Message::UsernameAccepted { msg, .. } => {
+                        let handler = self.handler.clone();
+                        let ctx = self.kahoot_ctx(&ctx);
+
+                        tokio::spawn(async move { handler.on_username_accepted(ctx, msg).await });
+                    }
                     Message::GetReady { msg } => {
-                        self.handler.on_get_ready(self.kahoot_ctx(&ctx), msg).await;
+                        let handler = self.handler.clone();
+                        let ctx = self.kahoot_ctx(&ctx);
+
+                        tokio::spawn(async move { handler.on_get_ready(ctx, msg).await });
                     }
                     Message::StartQuestion { msg } => {
                         let ctx = self.kahoot_ctx(&ctx);
@@ -204,13 +225,13 @@ impl<T: Handler + 'static> cometd::client::Handler for KahootHandler<T> {
                             handler.on_start_question(ctx, msg).await;
                         });
                     }
-                    _msg => {
-                        // dbg!(msg);
+                    msg => {
+                        warn!("Unknown Message: {:#?}", msg);
                     }
                 }
             }
             _ => {
-                // dbg!("Unknown Packet: ", packet);
+                warn!("Unknown Packet: {:#?}", packet);
             }
         }
     }
@@ -236,7 +257,16 @@ impl<T: Handler + Send + 'static> Client<T> {
         name: String,
         handler: T,
     ) -> KahootResult<Client<T>> {
+        trace!(
+            "connecting with custom handler with code='{}' and name='{}'",
+            code,
+            name
+        );
+
         let token = crate::challenge::Client::new().get_token(&code).await?;
+
+        trace!("solved challenge, got token='{}'", token);
+
         let url = format!("wss://kahoot.it/cometd/{}/{}", &code, token);
         let handler = KahootHandler::new(&code, &name, handler);
         let client = cometd::Client::connect_with_handler(&url, handler).await?;
@@ -247,6 +277,8 @@ impl<T: Handler + Send + 'static> Client<T> {
 
     /// Run the client
     pub async fn run(&mut self) -> KahootResult<()> {
+        trace!("running kahoot client");
+
         self.client.run().await;
 
         if let Some(e) = self.client.handler.exit_error.lock().unwrap().take() {

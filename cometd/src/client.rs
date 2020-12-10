@@ -142,7 +142,12 @@ impl<T: Handler + 'static> Client<T> {
                                 assert_eq!(packet.successful, Some(true));
                             }
                             _ => {
-                                self.handler.on_message(self.ctx.clone(), packet).await;
+                                let handler = self.handler.clone();
+                                let ctx = self.ctx.clone();
+                                
+                                tokio::spawn(async move {
+                                    handler.on_message(ctx, packet).await;
+                                });
                             }
                         }
                     }
