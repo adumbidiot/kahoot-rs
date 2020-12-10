@@ -14,6 +14,7 @@ use crate::{
     CometError,
     CometResult,
 };
+use std::sync::Arc;
 use tungstenite::error::Error as TError;
 
 /// A cometd client
@@ -22,7 +23,7 @@ pub struct Client<T> {
     transport: WsTransport,
 
     /// The event handler
-    pub handler: T,
+    pub handler: Arc<T>,
 }
 
 impl Client<DefaultHandler> {
@@ -32,7 +33,7 @@ impl Client<DefaultHandler> {
     }
 }
 
-impl<T: Handler> Client<T> {
+impl<T: Handler + 'static> Client<T> {
     /// Connect to the url with the given handler
     pub async fn connect_with_handler(url: &str, handler: T) -> CometResult<Self> {
         let (stream, _response) = tokio_tungstenite::connect_async(url).await?;
@@ -41,7 +42,7 @@ impl<T: Handler> Client<T> {
             ctx: Context::new(transport.clone()),
             transport,
 
-            handler,
+            handler: Arc::new(handler),
         };
 
         client.ctx.send_handshake().await?;
@@ -49,6 +50,7 @@ impl<T: Handler> Client<T> {
         Ok(client)
     }
 
+    /// Run client
     pub async fn run(&mut self) {
         loop {
             match self.transport.next_packet().await {
@@ -68,14 +70,24 @@ impl<T: Handler> Client<T> {
                                     match self.ctx.send_connect().await {
                                         Ok(_) => {}
                                         Err(e) => {
-                                            self.handler.on_error(self.ctx.clone(), e).await;
+                                            let handler = self.handler.clone();
+                                            let ctx = self.ctx.clone();
+
+                                            tokio::spawn(
+                                                async move { handler.on_error(ctx, e).await },
+                                            );
                                         }
                                     }
                                 } else {
                                     match self.ctx.send_handshake().await {
                                         Ok(_) => {}
                                         Err(e) => {
-                                            self.handler.on_error(self.ctx.clone(), e).await;
+                                            let handler = self.handler.clone();
+                                            let ctx = self.ctx.clone();
+
+                                            tokio::spawn(
+                                                async move { handler.on_error(ctx, e).await },
+                                            );
                                         }
                                     }
                                 }
@@ -85,7 +97,12 @@ impl<T: Handler> Client<T> {
                                     match self.ctx.send_handshake().await {
                                         Ok(_) => {}
                                         Err(e) => {
-                                            self.handler.on_error(self.ctx.clone(), e).await;
+                                            let handler = self.handler.clone();
+                                            let ctx = self.ctx.clone();
+
+                                            tokio::spawn(
+                                                async move { handler.on_error(ctx, e).await },
+                                            );
                                         }
                                     }
                                 } else {
@@ -98,8 +115,14 @@ impl<T: Handler> Client<T> {
                                             false
                                         }
                                     };
+
                                     if is_reconnect {
-                                        self.handler.on_reconnect(self.ctx.clone()).await;
+                                        let handler = self.handler.clone();
+                                        let ctx = self.ctx.clone();
+
+                                        tokio::spawn(
+                                            async move { handler.on_reconnect(ctx).await },
+                                        );
                                     }
                                 }
 
@@ -107,7 +130,10 @@ impl<T: Handler> Client<T> {
                                 match self.ctx.send_connect().await {
                                     Ok(_) => {}
                                     Err(e) => {
-                                        self.handler.on_error(self.ctx.clone(), e).await;
+                                        let handler = self.handler.clone();
+                                        let ctx = self.ctx.clone();
+
+                                        tokio::spawn(async move { handler.on_error(ctx, e).await });
                                     }
                                 }
                             }
