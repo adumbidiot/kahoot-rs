@@ -1,0 +1,4 @@
+(function() {var implementors = {};
+implementors["cometd"] = [{"text":"impl Error for CometError","synthetic":false,"types":[]}];
+implementors["kahoot"] = [{"text":"impl Error for DecodeError","synthetic":false,"types":[]},{"text":"impl Error for SendDuccError","synthetic":false,"types":[]},{"text":"impl Error for SendDuccErrorKind","synthetic":false,"types":[]},{"text":"impl Error for DecodeTokenError","synthetic":false,"types":[]},{"text":"impl Error for KahootError","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

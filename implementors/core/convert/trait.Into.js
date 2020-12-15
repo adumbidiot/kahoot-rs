@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["cometd"] = [{"text":"impl Into&lt;Cow&lt;'static, str&gt;&gt; for Channel","synthetic":false,"types":[]},{"text":"impl Into&lt;String&gt; for Channel","synthetic":false,"types":[]},{"text":"impl Into&lt;String&gt; for ConnectionType","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

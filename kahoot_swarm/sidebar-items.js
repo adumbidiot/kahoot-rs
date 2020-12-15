@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["TaskMessageData",""]],"fn":[["main",""],["read_line",""]],"struct":[["BotHandler",""],["Swarm",""],["TaskMessage",""]]});
