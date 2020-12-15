@@ -11,7 +11,7 @@ base64 = "0.13.0"
 # Boa = "0.10.0"
 Boa = { git = "https://github.com/boa-dev/boa", rev = "7f1d6aae15a53b07e477bb6356a6f69247c24bad", default-features = false } # Fixes lexing bug, wait for next release
 cometd = { path = "../cometd" }
-bytes = "0.5.4"
+bytes = "0.6.0"
 ducc = "0.1.3"
 http = "0.2.0"
 hyper = "0.13.3"
