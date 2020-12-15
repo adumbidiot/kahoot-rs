@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use std::collections::HashMap;
 
+/// Message Types
 #[derive(Debug)]
 enum MessageType {
     GetReady,

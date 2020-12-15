@@ -16,11 +16,13 @@ use serde::{
 };
 use std::collections::HashMap;
 
+/// A Cometd data packet
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Packet {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub advice: Option<Advice>,
 
+    /// The channel this is sent on
     pub channel: Channel,
 
     #[serde(rename = "clientId", skip_serializing_if = "Option::is_none")]
@@ -59,6 +61,7 @@ pub struct Packet {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 
+    /// Extra fields in the json packet
     #[serde(flatten)]
     pub extra: HashMap<String, serde_json::Value>,
 }

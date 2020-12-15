@@ -21,7 +21,7 @@ allow-osi-fsf-free = "neither"
 confidence-threshold = 0.93
 default = "deny"
 private = { ignore = true }
-allow = [ "Apache-2.0", "MIT", "Unlicense", "Zlib", "BSD-3-Clause" ]
+allow = [ "Apache-2.0", "MIT", "Unlicense", "Zlib", "BSD-3-Clause", "MPL-2.0" ]
 exceptions = []
 
 [[licenses.clarify]]
@@ -94,4 +94,6 @@ deny = [
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = [ "https://github.com/rust-lang/crates.io-index" ]
-allow-git = []
+allow-git = [
+    "https://github.com/boa-dev/boa"
+]

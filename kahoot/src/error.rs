@@ -1,49 +1,56 @@
 use cometd::CometError;
 
+/// Kahoot Result
 pub type KahootResult<T> = Result<T, KahootError>;
 
-#[derive(Debug)]
+/// Kahoot Error
+#[derive(Debug, thiserror::Error)]
 pub enum KahootError {
-    Hyper(hyper::Error),
-    InvalidUrl(http::uri::InvalidUri),
+    /// Hyper HTTP Error
+    #[error("{0}")]
+    Hyper(#[from] hyper::Error),
+
+    /// Invalid http uri
+    #[error("{0}")]
+    InvalidUrl(#[from] http::uri::InvalidUri),
+
+    /// Invalid Http Status
+    #[error("invalid http status {0}")]
     InvalidStatus(http::StatusCode),
-    Json(serde_json::Error),
-    Comet(CometError),
-    Http(http::Error),
 
-    ChallengeDecodeError(crate::challenge::DecodeError),
+    /// A blocking task panicked
+    #[error("{0}")]
+    TokioJoin(#[from] tokio::task::JoinError),
+
+    /// Json Error
+    #[error("{0}")]
+    Json(#[from] serde_json::Error),
+
+    /// Comet Error
+    #[error("{0}")]
+    Comet(#[from] CometError),
+
+    /// Http Error
+    #[error("{0}")]
+    Http(#[from] http::Error),
+
+    /// Challenge decode error
+    #[error("{0}")]
+    ChallengeDecodeError(#[from] crate::challenge::DecodeError),
+
+    /// Invalid Game Code
+    #[error("invalid game code")]
     InvalidCode,
+
+    /// Missing Token
+    #[error("missing token")]
     MissingToken,
+
+    /// Missing name
+    #[error("missing name")]
     MissingName,
+
+    /// Invalid Login
+    #[error("invalid login")]
     InvalidLogin(crate::LoginResponse),
-}
-
-impl From<hyper::Error> for KahootError {
-    fn from(e: hyper::Error) -> Self {
-        Self::Hyper(e)
-    }
-}
-
-impl From<http::uri::InvalidUri> for KahootError {
-    fn from(e: http::uri::InvalidUri) -> Self {
-        Self::InvalidUrl(e)
-    }
-}
-
-impl From<serde_json::Error> for KahootError {
-    fn from(e: serde_json::Error) -> Self {
-        Self::Json(e)
-    }
-}
-
-impl From<cometd::CometError> for KahootError {
-    fn from(e: cometd::CometError) -> Self {
-        Self::Comet(e)
-    }
-}
-
-impl From<crate::challenge::DecodeError> for KahootError {
-    fn from(e: crate::challenge::DecodeError) -> Self {
-        Self::ChallengeDecodeError(e)
-    }
 }

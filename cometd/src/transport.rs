@@ -54,7 +54,7 @@ impl WsTransport {
             packet.id = Some(self.get_new_packet_id().to_string());
         }
 
-        let data = serde_json::to_string(&packets).map_err(CometError::Json)?;
+        let data = serde_json::to_string(&packets)?;
 
         self.tx
             .lock()
@@ -62,8 +62,7 @@ impl WsTransport {
             .as_mut()
             .ok_or(CometError::ClientExited)?
             .send(TMessage::Text(data))
-            .await
-            .map_err(CometError::Ws)?;
+            .await?;
 
         Ok(())
     }
@@ -83,7 +82,7 @@ impl WsTransport {
             match msg {
                 Ok(msg) => match msg {
                     TMessage::Text(txt) => {
-                        return serde_json::from_str::<Vec<Packet>>(&txt).map_err(CometError::Json);
+                        return Ok(serde_json::from_str::<Vec<Packet>>(&txt)?);
                     }
                     TMessage::Close(_frame) => {
                         self.handle_server_shutdown().await?;
@@ -118,18 +117,13 @@ impl WsTransport {
 
     pub async fn graceful_shutdown(&self) -> CometResult<()> {
         let mut stream = self.steal_stream().await?;
-        stream.close(None).await.map_err(CometError::Ws)?;
+        stream.close(None).await?;
 
         Ok(())
     }
 
     async fn handle_server_shutdown(&self) -> CometResult<()> {
-        self.steal_stream()
-            .await?
-            .get_mut()
-            .shutdown()
-            .await
-            .map_err(CometError::Io)?;
+        self.steal_stream().await?.get_mut().shutdown().await?;
 
         Ok(())
     }
