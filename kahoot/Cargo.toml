@@ -25,4 +25,4 @@ tokio = { version = "0.2.13", features = [ "time" ] }
 
 [dev-dependencies]
 tokio = { version = "0.2.13", features = [ "macros", "rt-threaded" ] }
-rand = "0.7.3"
+rand = "0.8.0"
