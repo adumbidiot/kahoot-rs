@@ -9,5 +9,5 @@ license = "MIT"
 env_logger = "0.8.2"
 kahoot = { path = "../kahoot" }
 tokio = { version = "0.2.13", features = [ "macros", "rt-threaded" ] }
-rand = "0.7.3"
+rand = "0.8.2"
 futures = "0.3.4"
