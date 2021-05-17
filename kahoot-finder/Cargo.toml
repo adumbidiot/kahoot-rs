@@ -9,4 +9,4 @@ license = "MIT"
 http = "0.2.0"
 kahoot = { path = "../kahoot" }
 rand = "0.7.3"
-tokio = { version = "0.2.13", features = [ "macros", "rt-threaded", "time" ] }
+tokio = { version = "1.6.0", features = [ "macros", "rt-threaded", "time" ] }
