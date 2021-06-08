@@ -14,7 +14,7 @@ cometd = { path = "../cometd" }
 bytes = "0.5.4"
 ducc = "0.1.3"
 http = "0.2.0"
-hyper = "0.13.3"
+hyper = "0.14.9"
 hyper-tls = "0.4.1"
 log = "0.4.11"
 parking_lot = "0.11.0"
