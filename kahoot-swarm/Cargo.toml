@@ -6,7 +6,7 @@ edition = "2018"
 license = "MIT"
 
 [dependencies]
-env_logger = "0.8.2"
+env_logger = "0.9.0"
 kahoot = { path = "../kahoot" }
 tokio = { version = "0.2.13", features = [ "macros", "rt-threaded" ] }
 rand = "0.7.3"
